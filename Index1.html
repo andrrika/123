@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Нейробот для вашего бизнеса</title>
+
+  <!-- Подключаем <model-viewer> -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer@v3.0.0/dist/model-viewer.min.js"></script>
+
+  <!-- GSAP (базовая библиотека) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+  <!-- Плагин ScrollTrigger для GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+
+  <style>
+    /* Сброс отступов */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Основные стили */
+    body {
+      background: #000;          /* Чёрный фон */
+      font-family: Arial, sans-serif;
+      color: #fff;
+      position: relative;
+      /* Можно убрать или оставить auto (прокрутка) */
+    }
+
+    /* Едва заметная сетка (опционально) */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(#222 1px, transparent 1px),
+        linear-gradient(90deg, #222 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.2;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Hero (шапка) */
+    .hero {
+      width: 100%;
+      min-height: 100vh;        /* чтобы шапка занимала хотя бы весь экран */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+      padding: 0 5%;
+    }
+
+    /* Текст в шапке */
+    .hero-content {
+      width: 50%;
+      max-width: 600px;
+    }
+    .title {
+      font-size: 8em;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 0.3em;
+      opacity: 0;               /* Исходно прозрачный для анимации */
+      transform: translateY(20px);
+    }
+    .accent {
+      color: #FFD700;           /* Золотой */
+    }
+    .subtitle {
+      font-size: 3.6em;
+      opacity: 0;               /* Исходно прозрачный для анимации */
+      transform: translateY(20px);
+    }
+
+    /* Блок с 3D-моделью */
+    .hero-model {
+      position: relative;
+      width: 50%;
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .hero-model::before {
+      content: "";
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0) 60%);
+      z-index: 1;
+    }
+    model-viewer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      background-color: transparent;
+    }
+
+    /* Секция "Что такое нейро бот?" */
+    .info-section {
+      /* Сделаем её заметной: */
+      background: #111;            /* Тёмно-серый, чтобы отличался от #000 */
+      border: 2px solid #FFD700;  /* Золотая рамка */
+      border-radius: 10px;        /* Скруглённые углы */
+      
+      /* Небольшая тень, чтобы выделить блок */
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+
+      /* Отступы и центрирование */
+      max-width: 1200px;
+      margin: 5% auto;     /* 5% сверху/снизу, auto слева/справа */
+      padding: 3% 5%;
+      /* Добавим начальную невидимость - но проще анимировать через gsap.from(...) */
+    }
+
+    .info-section h2 {
+      font-size: 2.5em;
+      margin-bottom: 1em;
+      color: #FFD700;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .info-section p {
+      font-size: 1.2em;
+      line-height: 1.6em;
+      margin-bottom: 1em;
+      text-align: justify;
+    }
+
+    /* Секция-кейс */
+.case-section {
+  max-width: 1200px;
+  margin: 5% auto;       /* чтобы отделить сверху и снизу */
+  padding: 0 5%;         /* боковые отступы */
+  text-align: center;    /* общий стиль */
+}
+
+/* Заголовок кейса */
+.case-title {
+  font-size: 2em;
+  margin-bottom: 0.3em;
+  color: #fff;
+}
+
+/* Плашка "Средний чек" */
+.average-check {
+  display: inline-block;
+  background-color: #adff2f; /* Яркий салатовый или #FFD700 (золотой) */
+  color: #000;
+  font-weight: bold;
+  padding: 0.4em 0.8em;
+  border-radius: 8px;
+  margin-bottom: 2em;
+}
+
+/* Блок с тремя колонками: ДО, картинка, ПОСЛЕ */
+.case-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;  /* чтобы на мобильных колонки шли в столбик */
+  gap: 2em;         /* зазор между колонками */
+}
+
+/* Колонки слева/справа */
+.case-column {
+  flex: 1 1 200px;  /* каждая колонка как минимум 200px */
+  max-width: 300px;
+  text-align: left; /* внутри колонки текст слева */
+}
+
+/* Заголовки "ДО" (красный) / "ПОСЛЕ" (зелёный) */
+.case-column h3 {
+  font-size: 1.5em;
+  margin-bottom: 0.5em;
+}
+.before {
+  color: #ff3333;
+}
+.after {
+  color: #adff2f;
+}
+
+/* Список статов */
+.case-column ul {
+  list-style: none;
+  padding-left: 0;
+}
+.case-column ul li {
+  margin: 0.4em 0;
+  font-size: 1em; /* подберите нужный размер */
+}
+
+/* Текст про "Сокращение затрат" */
+.savings {
+  margin-top: 1.2em;
+  font-size: 1.1em;
+}
+
+/* Блок для картинки в центре */
+.case-phone {
+  flex: 0 1 auto;
+  max-width: 250px;  /* подберите ширину */
+  text-align: center;
+}
+.case-phone img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Контейнер для кейса (Trans Consulting) */
+.consulting-hero {
+      width: 100%;
+      min-height: 100vh;    /* Занимает хотя бы весь экран */
+      display: flex;
+      flex-direction: column; /* Заголовок сверху, колонки снизу */
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+      padding: 5% 8%;
+      box-sizing: border-box;
+    }
+
+    /* Заголовок кейса */
+    .consulting-hero h2 {
+      font-size: 3em;
+      font-weight: 900;
+      margin-bottom: 0.5em;
+      line-height: 1.2;
+      opacity: 0;          /* Для анимации */
+      transform: translateY(30px);
+    }
+
+    /* Плашка "Средний чек" (более выразительная) */
+    .consulting-hero .avg-check {
+      display: inline-block;
+      padding: 0.6em 1em;
+      background: #FFD700;  /* золото */
+      color: #000;
+      font-weight: bold;
+      border-radius: 12px;
+      font-size: 1.1em;
+      margin-bottom: 2em;
+      opacity: 0;           /* Для анимации */
+      transform: translateY(30px);
+    }
+
+    /* Обёртка для "До", "Телефон", "После" */
+    .consulting-content {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;     /* на мобильных перейдёт в колонку */
+      gap: 2em;
+    }
+
+    /* Колонки "до" и "после" */
+    .consulting-column {
+      flex: 1 1 220px;
+      max-width: 320px;
+      opacity: 0;               /* Анимация появления */
+      transform: translateY(50px);
+    }
+    .consulting-column h3 {
+      font-size: 2em;
+      margin-bottom: 0.5em;
+    }
+    /* "ДО" (красный) */
+    .before {
+      color: #ff3333;
+    }
+    /* "ПОСЛЕ" (зелёный/салатовый) */
+    .after {
+      color: #adff2f;
+    }
+
+    .consulting-column ul {
+      list-style: none;
+      padding-left: 0;
+      font-size: 1.1em;
+      line-height: 1.5em;
+    }
+    .consulting-column ul li {
+      margin: 0.5em 0;
+    }
+    .consulting-column strong {
+      font-weight: bold;
+    }
+    /* Текст про затраты */
+    .consulting-column .savings {
+      margin-top: 1em;
+      font-size: 1.1em;
+    }
+
+    /* Блок телефона по центру */
+    .consulting-phone {
+      flex: 0 1 auto;
+      max-width: 280px; /* можно увеличить */
+      position: relative;
+      opacity: 0;       /* анимация GSAP */
+      transform: translateY(50px);
+    }
+    .consulting-phone img {
+      width: 100%;
+      height: auto;
+      display: block;
+      position: relative;
+    }
+
+    /* Жёлтое свечение позади телефона */
+    .consulting-phone::before {
+      content: "";
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,215,0,0) 60%);
+      z-index: -1; /* за телефоном */
+    }
+
+    .contacts {
+    width: 100%;
+    min-height: 60vh; /* подберите нужную высоту */
+    position: relative;
+    padding: 5% 8%;
+    box-sizing: border-box;
+    text-align: center; /* центрируем заголовок */
+  }
+
+  /* Заголовок "КОНТАКТЫ" */
+  .contacts-title {
+    font-size: 4em; 
+    font-weight: 900;
+    color: #adff2f; /* ярко-зелёный */
+    margin-bottom: 1em;
+    line-height: 1.2;
+    /* Под анимацию: изначально скрываем/сдвигаем */
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  /* Контейнер для двух колонок (левая/правая) */
+  .contacts-content {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap; /* на мобильных уйдёт в столбик */
+    gap: 2em;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Левая колонка (въезжает слева) */
+  .contacts-left {
+    flex: 1 1 300px;
+    text-align: left;
+    /* Для анимации: изначально сдвинута влево */
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  /* Правая колонка (въезжает справа) */
+  .contacts-right {
+    flex: 1 1 300px;
+    text-align: left;
+    /* Для анимации: изначально сдвинута вправо */
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  /* Блок одного контакта (иконка + текст) */
+  .contact-item {
+    display: flex;
+    align-items: center;
+    margin: 1em 0;
+    font-size: 1.2em;
+  }
+  .contact-item img {
+    width: 32px; 
+    height: auto;
+    margin-right: 1em;
+  }
+
+
+    /* Адаптив (узкий экран) */
+    @media (max-width: 800px) {
+      .consulting-content {
+        flex-direction: column;
+        align-items: center;
+      }
+      .consulting-column,
+      .consulting-phone {
+        max-width: none;
+        width: 100%;
+        text-align: center;
+      }
+      .consulting-column h3 {
+        text-align: center;
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Регистрируем плагин ScrollTrigger
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Анимация заголовка в hero
+      gsap.to(".title", {
+        duration: 1,
+        opacity: 1,
+        y: 0, 
+        ease: "power2.out"
+      });
+      // Анимация подзаголовка в hero
+      gsap.to(".subtitle", {
+        duration: 1,
+        opacity: 1,
+        y: 0,
+        delay: 0.5,
+        ease: "power2.out"
+      });
+
+      // Анимация секции "Что такое нейро бот?" при прокрутке
+      gsap.from(".info-section", {
+        scrollTrigger: {
+          trigger: ".info-section",  // Когда .info-section попадёт в зону видимости
+          start: "top 80%",          // top блока дошёл до 80% высоты окна
+          // markers: true,          // Включите для отладки
+        },
+        duration: 1,
+        opacity: 0,
+        y: 50,                       // Секция въезжает снизу
+        ease: "power2.out"
+      });
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Заголовок
+      gsap.to(".consulting-hero h2", {
+        scrollTrigger: {
+          trigger: ".consulting-hero",
+          start: "top 80%"
+        },
+        duration: 1,
+        opacity: 1,
+        y: 0,
+        ease: "power2.out"
+      });
+
+      // Плашка "Средний чек"
+      gsap.to(".consulting-hero .avg-check", {
+        scrollTrigger: {
+          trigger: ".consulting-hero",
+          start: "top 75%"
+        },
+        duration: 1,
+        opacity: 1,
+        y: 0,
+        delay: 0.3,
+        ease: "power2.out"
+      });
+
+      // Левая колонка (ДО)
+      gsap.to(".consulting-column.before-col", {
+        scrollTrigger: {
+          trigger: ".consulting-hero",
+          start: "top 70%"
+        },
+        duration: 1,
+        opacity: 1,
+        y: 0,
+        ease: "power2.out"
+      });
+
+      // Телефон по центру
+      gsap.to(".consulting-phone", {
+        scrollTrigger: {
+          trigger: ".consulting-hero",
+          start: "top 70%"
+        },
+        duration: 1.2,
+        opacity: 1,
+        y: 0,
+        delay: 0.4,
+        ease: "power2.out"
+      });
+
+      // Правая колонка (ПОСЛЕ)
+      gsap.to(".consulting-column.after-col", {
+        scrollTrigger: {
+          trigger: ".consulting-hero",
+          start: "top 70%"
+        },
+        duration: 1,
+        opacity: 1,
+        y: 0,
+        delay: 0.6,
+        ease: "power2.out"
+      });
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+    // Заголовок "КОНТАКТЫ" (въезжает сверху)
+    gsap.to(".contacts-title", {
+      scrollTrigger: {
+        trigger: ".contacts",
+        start: "top 80%"
+      },
+      duration: 1,
+      opacity: 1,
+      y: 0,           // сбрасываем translateY
+      ease: "power2.out"
+    });
+
+    // Левая колонка (въезжает слева)
+    gsap.to(".contacts-left", {
+      scrollTrigger: {
+        trigger: ".contacts",
+        start: "top 80%"
+      },
+      duration: 1,
+      opacity: 1,
+      x: 0,           // сбрасываем translateX
+      ease: "power2.out",
+      delay: 0.3
+    });
+
+    // Правая колонка (въезжает справа)
+    gsap.to(".contacts-right", {
+      scrollTrigger: {
+        trigger: ".contacts",
+        start: "top 80%"
+      },
+      duration: 1,
+      opacity: 1,
+      x: 0,
+      ease: "power2.out",
+      delay: 0.5
+    });
+  });
+  </script>
+</head>
+
+<body>
+  <!-- Hero-блок (шапка) -->
+  <div class="hero">
+    <!-- Текст слева -->
+    <div class="hero-content">
+      <h1 class="title">НЕЙРО <span class="accent">БОТ</span></h1>
+      <p class="subtitle">Для вашего бизнеса</p>
+    </div>
+
+    <!-- Космонавт справа (3D-модель Astronaut) -->
+    <div class="hero-model">
+      <model-viewer
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    alt="3D космонавт"
+    camera-controls
+    auto-rotate
+    style="width:100vw; height:100vh;"
+  >
+  </model-viewer>
+    </div>
+  </div>
+
+  <!-- Новая секция с информацией -->
+  <section class="info-section">
+    <h2>Что такое нейро бот?</h2>
+    <p>
+      «Нейробот» — это программный комплекс, использующий технологии искусственного 
+      интеллекта и машинного обучения для автоматизации процессов, решения бизнес-задач 
+      и взаимодействия с пользователями. Он может обрабатывать естественный язык, 
+      отвечать на вопросы в режиме реального времени, предлагать рекомендации и даже 
+      обучаться новым задачам, анализируя входящие данные.
+    </p>
+    <p>
+      Такой бот на базе нейронных сетей способен заменить (или значительно сократить нагрузку на) 
+      классические контакт-центры, увеличить эффективность клиентской поддержки и предоставить 
+      новые возможности для персонализации обслуживания. Благодаря сложным алгоритмам 
+      «Нейробот» анализирует контекст запросов, предсказывает намерения пользователя 
+      и помогает принимать решения на основе накопленных знаний.
+    </p>
+    <p>
+      В результате это решение открывает путь к более гибкой, быстрой 
+      и интеллектуальной коммуникации — будь то общение с клиентами, 
+      автоматизация внутренних процессов или даже творчество и генерация контента.
+    </p>
+  </section>
+
+<!-- Секция "Trans Consulting" -->
+<section class="consulting-hero">
+  <h2>Trans Consulting: Консалтинг в сфере грузоперевозок</h2>
+  
+  <div class="avg-check">Средний чек: 175.000&nbsp;тг</div>
+
+  <div class="consulting-content">
+    <!-- Левая колонка "ДО" (добавим класс before-col, чтобы анимировать отдельно) -->
+    <div class="consulting-column before-col">
+      <h3 class="before">ДО:</h3>
+      <ul>
+        <li><strong>Среднее время ответа:</strong> 46&nbsp;минут</li>
+        <li><strong>Процент упущенных клиентов:</strong> 26%</li>
+        <li><strong>Конверсия в консультацию (КЭВ):</strong> 30%</li>
+      </ul>
+    </div>
+
+    <!-- Центр: телефон -->
+    <div class="consulting-phone">
+      <!-- Замените 'phone.png' на свою картинку телефона/скрина -->
+      <img src="123.png" alt="Трансконсалтинг - телефон">
+    </div>
+
+    <!-- Правая колонка "ПОСЛЕ" (класс after-col для анимации) -->
+    <div class="consulting-column after-col">
+      <h3 class="after">ПОСЛЕ:</h3>
+      <ul>
+        <li><strong>Среднее время ответа:</strong> 12&nbsp;секунд</li>
+        <li><strong>Процент упущенных клиентов:</strong> 3%</li>
+        <li><strong>Конверсия в консультацию (КЭВ):</strong> 39%</li>
+      </ul>
+      <p class="savings">
+        Сокращение ежемесячных затрат
+        <br>
+        <strong>на 14.000.000&nbsp;тенге</strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="contacts">
+  <!-- Заголовок -->
+  <h2 class="contacts-title">КОНТАКТЫ</h2>
+
+  <div class="contacts-content">
+    <!-- Левая колонка (с WhatsApp, Telegram) -->
+    <div class="contacts-left">
+      <div class="contact-item">
+        <!-- Замените на вашу иконку WhatsApp или FontAwesome -->
+        <img src="whatsapp.png" alt="WhatsApp">
+        <span>+7 777 739 9171</span>
+      </div>
+      <div class="contact-item">
+        <img src="telegram.png" alt="Telegram">
+        <span>@ads_evrei</span>
+      </div>
+    </div>
+
+    <!-- Правая колонка -->
+    <div class="contacts-right">
+      <div class="contact-item">
+        <img src="whatsapp.png" alt="WhatsApp">
+        <span>+7 700 257 8017</span>
+      </div>
+      <div class="contact-item">
+        <img src="telegram.png" alt="Telegram">
+        <span>@Baichigassov</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+</body>
+</html>
